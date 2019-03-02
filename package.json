@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p 8000"
+    "export": "next export",
+    "start": "next start -p 8000",
+    "now-build": "yarn build"
   },
   "dependencies": {
     "eslint": "^5.15.0",
