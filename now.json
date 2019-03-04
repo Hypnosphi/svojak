@@ -1,6 +1,11 @@
 {
   "version": 2,
   "builds": [
-    { "src": "next.config.js", "use": "@now/next" }
+    {"src": "next.config.js", "use": "@now/next"},
+    {"src": "server/**/*.js", "use": "@now/node"}
+  ],
+  "routes": [
+    { "src": "/api/themes", "dest": "server/api/themes.js" },
+    { "src": "/tts.ogg", "dest": "server/tts.ogg.js" }
   ]
 }

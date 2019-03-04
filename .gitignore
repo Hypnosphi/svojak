@@ -2,3 +2,6 @@
 *.iml
 node_modules
 .next
+yandex_keys
+.env
+out
