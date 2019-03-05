@@ -66,7 +66,7 @@ const processTheme = ({
   return {
     id: QuestionId._text,
     questions,
-    title: parsedQuestions.title.trim(),
+    title: parsedQuestions.title.trim().replace(/\.$/, ''),
     date: tournamentPlayedAt._text,
     tournament: tournamentTitle._text,
     author: Authors._text,
