@@ -140,7 +140,7 @@ const Theme = ({
         }
         button:focus {
           outline: none;
-          box-shadow: 0 0 0 2px #008eff;
+          box-shadow: 0 0 0 2px #80c6ff;
         }
         @keyframes progress {
           from {
@@ -298,7 +298,7 @@ const Index = ({data}) => {
         }
         .refresh:focus {
           outline: none;
-          box-shadow: 0 0 0 2px #008eff;
+          box-shadow: 0 0 0 2px #80c6ff;
         }
         .refresh:active {
           background-color: #d4edff;
