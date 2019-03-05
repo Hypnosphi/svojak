@@ -30,8 +30,6 @@ const getPlayList = ({questions, title}) =>
       title: text,
     }))
 
-const intencity = phase => 0.5 * (1 + Math.cos(2 * Math.PI * phase))
-
 const Theme = ({
   id,
   title,
