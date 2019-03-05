@@ -5,8 +5,6 @@ const querystring = require('querystring')
 const axios = require('axios')
 
 const yandexAuth = require('../yandexAuth')
-const token =
-  '***REMOVED***'
 const folderId = process.env.FOLDER_ID
 
 module.exports = async (req, res) => {
