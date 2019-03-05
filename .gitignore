@@ -5,3 +5,4 @@ node_modules
 yandex_keys
 .env
 out
+yarn-error.log

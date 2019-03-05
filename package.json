@@ -16,15 +16,14 @@
     "@cassette/hooks": "^2.0.0-alpha.30",
     "axios": "^0.18.0",
     "classnames": "^2.2.6",
-    "dotenv": "^6.2.0",
     "next": "^8.0.3",
-    "node-jose": "^1.1.2",
     "react": "^16.8.3",
     "react-dom": "^16.8.3",
     "react-icons": "^3.4.0",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
+    "dotenv": "^6.2.0",
     "eslint": "^5.15.0",
     "eslint-plugin-prettier": "^3.0.1",
     "fs-router": "^0.4.2",

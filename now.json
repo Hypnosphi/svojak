@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "alias": "svojak.de",
+  "env": {
+    "YANDEX_TOKEN": "@yandex-token",
+    "FOLDER_ID": "@folder-id"
+  },
   "builds": [
     {"src": "next.config.js", "use": "@now/next"},
     {"src": "server/**/*.js", "use": "@now/node"}
