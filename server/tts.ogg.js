@@ -11,7 +11,7 @@ const folderId = process.env.FOLDER_ID
 
 module.exports = async (req, res) => {
   const {text} = req.query
-  const {data} = await axios(
+  const {data, headers} = await axios(
     `https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize`,
     {
       method: 'post',
@@ -22,6 +22,8 @@ module.exports = async (req, res) => {
       responseType: 'stream',
     },
   )
+
+  res.setHeader('Content-Type', headers['content-type'])
 
   data.pipe(res)
 }
