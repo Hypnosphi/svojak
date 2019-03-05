@@ -70,8 +70,12 @@ const Theme = ({
     }
   }, [isInited])
 
+  React.useEffect(() => {
+    cancelAnimationFrame(rafRef.current)
+    onTogglePause(!isPlaying)
+  }, [isPlaying])
+
   const handleClick = () => {
-    onTogglePause()
     setIsPlaying(!isPlaying)
     if (!isSelected) {
       setSelected(id)
