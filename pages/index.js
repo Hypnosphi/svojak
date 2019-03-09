@@ -120,6 +120,7 @@ const Theme = ({
           font-size: 13px;
           cursor: pointer;
           border-radius: 3px;
+          color: inherit;
         }
         button::before {
           content: '';
