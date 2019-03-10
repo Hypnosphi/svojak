@@ -117,10 +117,10 @@ const Theme = ({
           border: none;
           text-align: left;
           padding: 8px 16px 16px;
-          font-size: 13px;
+          font-size: 12px;
           cursor: pointer;
           border-radius: 3px;
-          color: inherit;
+          color: #737577;
         }
         button::before {
           content: '';
@@ -174,6 +174,7 @@ const Theme = ({
           font-size: 20px;
           line-height: 24px;
           margin: 0 0 8px;
+          color: #1f2326;
         }
         .icon {
           position: absolute;
@@ -185,6 +186,7 @@ const Theme = ({
           align-items: center;
           justify-content: center;
           opacity: 0.3;
+          color: #444;
         }
         button:active .icon {
           opacity: 0.5;
@@ -214,23 +216,11 @@ const ThemeContainer = props => {
   )
 }
 
-const createMediaElement = () => {
-  const audio = document.createElement('audio')
-  audio.setAttribute('preload', 'none')
-  const setAttribute = audio.setAttribute
-  audio.setAttribute = function(name) {
-    if (name !== 'preload') {
-      return setAttribute.apply(this, arguments)
-    }
-  }
-  return audio
-}
-
 const Index = ({data}) => {
   const [selected, setSelected] = React.useState()
   return (
     <PlayerContextGroup
-      createMediaElement={createMediaElement}
+      createMediaElement={() => document.createElement('audio')}
       defaultRepeatStrategy="none"
     >
       <Head>
@@ -261,7 +251,7 @@ const Index = ({data}) => {
         .container {
           display: flex;
           flex-direction: row-reverse;
-          padding: 4px 12px;
+          padding: 12px;
         }
         @media (max-width: 640px) {
           .container {
@@ -272,7 +262,7 @@ const Index = ({data}) => {
           flex-grow: 1;
           display: grid;
           align-items: baseline;
-          grid-gap: 8px;
+          grid-gap: 16px 8px;
           grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
           grid-template-rows: auto;
           padding: 4px;
