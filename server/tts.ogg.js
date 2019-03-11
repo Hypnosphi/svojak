@@ -24,7 +24,12 @@ module.exports = async (req, res) => {
     )
 
     res.setHeader('Content-Type', headers['content-type'])
-
+    if (process.env.NODE_ENV === 'production') {
+      res.setHeader(
+        'Cache-Control',
+        'public, s-maxage=31536000, max-age=31536000',
+      )
+    }
     data.pipe(res)
   } catch (e) {
     console.error(e)
