@@ -11,6 +11,7 @@
   ],
   "routes": [
     { "src": "/api/themes", "dest": "server/api/themes.js" },
+    { "src": "/api/aneksCount", "dest": "server/api/aneksCount.js" },
     { "src": "/tts.ogg", "dest": "server/tts.ogg.js" },
     { "src": "/anek.ogg", "dest": "server/anek.ogg.js" }
   ]
