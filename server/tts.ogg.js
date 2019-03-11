@@ -7,9 +7,11 @@ const axios = require('axios')
 const yandexAuth = require('../yandexAuth')
 const folderId = process.env.FOLDER_ID
 
-module.exports = async (req, res) => {
+module.exports = async (req, res, getText) => {
   const {search} = url.parse(req.url)
-  const {text} = querystring.parse(search.slice(1))
+  const text = getText
+    ? await getText()
+    : querystring.parse(search.slice(1)).text
   try {
     const {data, headers} = await axios(
       `https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize`,
