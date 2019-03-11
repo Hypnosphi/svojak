@@ -3,7 +3,9 @@
   "alias": "svojak.de",
   "env": {
     "YANDEX_TOKEN": "@yandex-token",
-    "FOLDER_ID": "@folder-id"
+    "FOLDER_ID": "@folder-id",
+    "VK_TOKEN": "@vk-token",
+    "GROUP_ID": "-45491419"
   },
   "builds": [
     {"src": "next.config.js", "use": "@now/next"},
