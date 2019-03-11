@@ -1,8 +1,10 @@
 import axios from 'axios'
-import {IoMdPlay, IoMdPause, IoMdRefresh} from 'react-icons/io'
+import {IoMdPause, IoMdPlay, IoMdRefresh} from 'react-icons/io'
 import classNames from 'classnames'
 import Head from 'next/head'
 import Link from 'next/link'
+
+import {OGGPlayer, useOGGPlayerContext} from '../components/OGGPlayer'
 
 const ICON_SIZE = 80
 const ANIMATION_PHASES = 12
@@ -27,17 +29,20 @@ const getPlayList = ({questions, title}) =>
 
 const Theme = ({
   id,
+  questions,
   title,
   date,
   tournament,
   author,
   isSelected,
   isPlaying,
-  isLoading,
-  togglePlay,
+  dispatch,
 }) => {
+  const {isLoading, init} = useOGGPlayerContext()
+
   const handleClick = () => {
-    togglePlay({id, isPlaying: !isPlaying})
+    init(!isPlaying, getPlayList({questions, title})[0])
+    dispatch({type: 'TOGGLE', id, isPlaying: !isPlaying})
   }
 
   return (
@@ -46,7 +51,7 @@ const Theme = ({
         type="button"
         className={classNames({
           selected: isSelected,
-          loading: isLoading,
+          loading: isSelected && isLoading,
           playing: isPlaying,
         })}
         onClick={handleClick}
@@ -158,22 +163,6 @@ const Theme = ({
   )
 }
 
-let OGVPlayer
-const createMediaElement = params => {
-  const audio = document.createElement('audio')
-  if (audio.canPlayType('audio/ogg')) {
-    return audio
-  }
-
-  if (OGVPlayer == null) {
-    const ogv = require('ogv')
-    ogv.OGVLoader.base = 'static'
-    OGVPlayer = ogv.OGVPlayer
-    window.OVGPlayer = OGVPlayer
-  }
-  return new OGVPlayer(params)
-}
-
 const Themes = ({data}) => {
   const [{selected, isPlaying, trackIndex}, dispatch] = React.useReducer(
     (state, action) => {
@@ -212,69 +201,22 @@ const Themes = ({data}) => {
       trackIndex: 0,
     },
   )
-  const [isLoading, setIsLoading] = React.useState('false')
 
-  const playlist = React.useRef()
-  const getCurrentPlaylist = id => {
-    const selectedTheme = id && data.find(theme => theme.id === id)
+  const playlist = React.useMemo(() => {
+    const selectedTheme = selected && data.find(theme => theme.id === selected)
     return selectedTheme ? getPlayList(selectedTheme) : []
-  }
-  React.useEffect(() => {
-    playlist.current = getCurrentPlaylist(selected)
   }, [selected])
 
-  const handleEnd = () => {
-    dispatch({type: 'NEXT_TRACK', playlistLength: playlist.current.length})
-  }
-  const handleLoadstart = () => {
-    console.log('LOADSTARTA')
-    setIsLoading(true)
-  }
-  const handleLoadeddata = () => {
-    console.log('LOADEDDATAA')
-    setIsLoading(false)
-  }
-  const mediaRef = React.useRef()
-  const containerRef = React.useRef()
-  React.useEffect(() => {
-    const media = createMediaElement()
-    mediaRef.current = media
-    containerRef.current.appendChild(media)
-    media.addEventListener('ended', handleEnd)
-    media.addEventListener('loadstart', handleLoadstart)
-    media.addEventListener('loadeddata', handleLoadeddata)
-    return () => {
-      media.removeEventListener('ended', handleEnd)
-      media.removeEventListener('loadstart', handleLoadstart)
-      media.removeEventListener('loadeddata', handleLoadeddata)
-    }
-  }, [])
-
-  const mediaSrc = React.useRef()
-  const setSrc = src => {
-    if (src && mediaSrc.current !== src) {
-      mediaSrc.current = src
-      mediaRef.current.src = src
-    }
-  }
-
-  React.useEffect(() => {
-    setSrc(playlist.current[trackIndex])
-    if (isPlaying) {
-      mediaRef.current.play()
-    }
-  }, [selected, trackIndex])
-
-  const togglePlay = ({id, isPlaying}) => {
-    if (isPlaying && !mediaSrc.current) {
-      setSrc(getCurrentPlaylist(id)[trackIndex])
-    }
-    isPlaying ? mediaRef.current.play() : mediaRef.current.pause()
-    dispatch({type: 'TOGGLE', id, isPlaying})
-  }
+  const handleEnd = React.useCallback(() => {
+    dispatch({type: 'NEXT_TRACK', playlistLength: playlist.length})
+  }, [playlist])
 
   return (
-    <>
+    <OGGPlayer
+      src={playlist[trackIndex]}
+      isPlaying={isPlaying}
+      onEnd={handleEnd}
+    >
       {data.map(theme => {
         const isSelected = selected === theme.id
         return (
@@ -282,14 +224,12 @@ const Themes = ({data}) => {
             key={theme.id}
             isSelected={isSelected}
             isPlaying={isSelected && isPlaying}
-            isLoading={isSelected && isLoading}
-            togglePlay={togglePlay}
+            dispatch={dispatch}
             {...theme}
           />
         )
       })}
-      <div hidden ref={containerRef} />
-    </>
+    </OGGPlayer>
   )
 }
 
