@@ -10,7 +10,8 @@
     "dev": "node local.js",
     "build": "next build",
     "start": "next start -p 8000",
-    "now-build": "yarn build"
+    "now-build": "yarn build",
+    "lint": "eslint ."
   },
   "dependencies": {
     "axios": "^0.18.0",
@@ -28,6 +29,7 @@
     "dotenv": "^6.2.0",
     "eslint": "^5.15.0",
     "eslint-plugin-prettier": "^3.0.1",
+    "eslint-plugin-react-hooks": "^1.5.0",
     "fs-router": "^0.4.2",
     "micro": "^9.3.3",
     "prettier": "^1.16.4"
@@ -41,7 +43,8 @@
       }
     },
     "plugins": [
-      "prettier"
+      "prettier",
+      "react-hooks"
     ],
     "rules": {
       "prettier/prettier": [
@@ -52,7 +55,9 @@
           "trailingComma": "all",
           "bracketSpacing": false
         }
-      ]
+      ],
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn"
     }
   }
 }

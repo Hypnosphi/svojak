@@ -205,7 +205,7 @@ const Themes = ({data}) => {
   const playlist = React.useMemo(() => {
     const selectedTheme = selected && data.find(theme => theme.id === selected)
     return selectedTheme ? getPlayList(selectedTheme) : []
-  }, [selected])
+  }, [data, selected])
 
   const handleEnd = React.useCallback(() => {
     dispatch({type: 'NEXT_TRACK', playlistLength: playlist.length})

@@ -22,7 +22,6 @@ const OGGPlayerContext = React.createContext({
 export const OGGPlayer = ({src, isPlaying, onEnd = noop, children}) => {
   const [isLoading, setIsLoading] = React.useState(true)
 
-  const onEndRef = React.useRef('')
   const handleLoadeddata = () => setIsLoading(false)
 
   const mediaRef = React.useRef()

@@ -1,0 +1,9 @@
+.idea
+*.iml
+node_modules
+.next
+yandex_keys
+.env
+out
+yarn-error.log
+static

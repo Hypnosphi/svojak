@@ -1,4 +1,4 @@
-import {IoMdPlay, IoMdPause, IoMdRefresh} from 'react-icons/io'
+import {IoMdPlay, IoMdPause} from 'react-icons/io'
 import axios from 'axios'
 import random from 'random'
 
@@ -90,7 +90,7 @@ const Aneki = ({count}) => {
       .fill()
       .map((_, i) => i)
     updateIndex()
-  }, [])
+  }, [count])
 
   return (
     <OGGPlayer
