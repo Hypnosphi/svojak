@@ -1,7 +1,5 @@
 import axios from 'axios'
 import {IoMdPlay, IoMdPause, IoMdRefresh} from 'react-icons/io'
-import {PlayerContextGroup, PlayerContextProvider} from '@cassette/core'
-import {usePlayerContext} from '@cassette/hooks'
 import classNames from 'classnames'
 import Head from 'next/head'
 import Link from 'next/link'
@@ -25,10 +23,7 @@ const getPlayList = ({questions, title}) =>
         ].filter(Boolean),
       ),
     )
-    .map(text => ({
-      url: `/tts.ogg?text=${encodeURIComponent(text)}`,
-      title: text,
-    }))
+    .map(text => `/tts.ogg?text=${encodeURIComponent(text)}`)
 
 const Theme = ({
   id,
@@ -37,49 +32,12 @@ const Theme = ({
   tournament,
   author,
   isSelected,
-  isInited,
-  setSelected,
+  isPlaying,
+  isLoading,
+  togglePlay,
 }) => {
-  const {
-    paused,
-    awaitingPlayResume,
-    trackLoading,
-    onTogglePause,
-  } = usePlayerContext([
-    'paused',
-    'awaitingPlayResume',
-    'trackLoading',
-    'onTogglePause',
-  ])
-
-  const [isPlaying, setIsPlaying] = React.useState(false)
-  const rafRef = React.useRef()
-  const shouldPause =
-    isPlaying && paused && !awaitingPlayResume && !trackLoading
-
-  React.useEffect(() => {
-    if (shouldPause) {
-      rafRef.current = requestAnimationFrame(() => setIsPlaying(false))
-      return () => cancelAnimationFrame(rafRef.current)
-    }
-  }, [shouldPause])
-
-  React.useEffect(() => {
-    if (isInited) {
-      setTimeout(() => onTogglePause(false), 0)
-    }
-  }, [isInited])
-
-  React.useEffect(() => {
-    cancelAnimationFrame(rafRef.current)
-    onTogglePause(!isPlaying)
-  }, [isPlaying])
-
   const handleClick = () => {
-    setIsPlaying(!isPlaying)
-    if (!isSelected) {
-      setSelected(id)
-    }
+    togglePlay({id, isPlaying: !isPlaying})
   }
 
   return (
@@ -88,7 +46,7 @@ const Theme = ({
         type="button"
         className={classNames({
           selected: isSelected,
-          loading: trackLoading,
+          loading: isLoading,
           playing: isPlaying,
         })}
         onClick={handleClick}
@@ -200,109 +158,212 @@ const Theme = ({
   )
 }
 
-const emptyArray = []
-const ThemeContainer = props => {
-  const [isInited, setIsInited] = React.useState(false)
-  if (!isInited && props.isSelected) {
-    setIsInited(true)
+let OGVPlayer
+const createMediaElement = params => {
+  const audio = document.createElement('audio')
+  if (audio.canPlayType('audio/ogg')) {
+    return audio
+  }
+
+  if (OGVPlayer == null) {
+    const ogv = require('ogv')
+    ogv.OGVLoader.base = 'static'
+    OGVPlayer = ogv.OGVPlayer
+    window.OVGPlayer = OGVPlayer
+  }
+  return new OGVPlayer(params)
+}
+
+const Themes = ({data}) => {
+  const [{selected, isPlaying, trackIndex}, dispatch] = React.useReducer(
+    (state, action) => {
+      switch (action.type) {
+        case 'TOGGLE':
+          return {
+            ...state,
+            selected: action.id != null ? action.id : state.selected,
+            isPlaying: action.isPlaying,
+            trackIndex:
+              action.id != null && action.id !== state.selected
+                ? 0
+                : state.trackIndex,
+          }
+        case 'NEXT_TRACK': {
+          const nextIndex = state.trackIndex + 1
+          if (nextIndex >= action.playlistLength) {
+            return {
+              ...state,
+              trackIndex: 0,
+              isPlaying: false,
+            }
+          }
+          return {
+            ...state,
+            trackIndex: nextIndex,
+          }
+        }
+        default:
+          return state
+      }
+    },
+    {
+      selected: null,
+      isPlaying: false,
+      trackIndex: 0,
+    },
+  )
+  const [isLoading, setIsLoading] = React.useState('false')
+
+  const playlist = React.useRef()
+  const getCurrentPlaylist = id => {
+    const selectedTheme = id && data.find(theme => theme.id === id)
+    return selectedTheme ? getPlayList(selectedTheme) : []
+  }
+  React.useEffect(() => {
+    playlist.current = getCurrentPlaylist(selected)
+  }, [selected])
+
+  const handleEnd = () => {
+    dispatch({type: 'NEXT_TRACK', playlistLength: playlist.current.length})
+  }
+  const handleLoadstart = () => {
+    console.log('LOADSTARTA')
+    setIsLoading(true)
+  }
+  const handleLoadeddata = () => {
+    console.log('LOADEDDATAA')
+    setIsLoading(false)
+  }
+  const mediaRef = React.useRef()
+  const containerRef = React.useRef()
+  React.useEffect(() => {
+    const media = createMediaElement()
+    mediaRef.current = media
+    containerRef.current.appendChild(media)
+    media.addEventListener('ended', handleEnd)
+    media.addEventListener('loadstart', handleLoadstart)
+    media.addEventListener('loadeddata', handleLoadeddata)
+    return () => {
+      media.removeEventListener('ended', handleEnd)
+      media.removeEventListener('loadstart', handleLoadstart)
+      media.removeEventListener('loadeddata', handleLoadeddata)
+    }
+  }, [])
+
+  const mediaSrc = React.useRef()
+  const setSrc = src => {
+    if (src && mediaSrc.current !== src) {
+      mediaSrc.current = src
+      mediaRef.current.src = src
+    }
+  }
+
+  React.useEffect(() => {
+    setSrc(playlist.current[trackIndex])
+    if (isPlaying) {
+      mediaRef.current.play()
+    }
+  }, [selected, trackIndex])
+
+  const togglePlay = ({id, isPlaying}) => {
+    if (isPlaying && !mediaSrc.current) {
+      setSrc(getCurrentPlaylist(id)[trackIndex])
+    }
+    isPlaying ? mediaRef.current.play() : mediaRef.current.pause()
+    dispatch({type: 'TOGGLE', id, isPlaying})
   }
 
   return (
-    <PlayerContextProvider
-      playlist={isInited ? getPlayList(props) : emptyArray}
-    >
-      <Theme {...props} isInited={isInited} />
-    </PlayerContextProvider>
+    <>
+      {data.map(theme => {
+        const isSelected = selected === theme.id
+        return (
+          <Theme
+            key={theme.id}
+            isSelected={isSelected}
+            isPlaying={isSelected && isPlaying}
+            isLoading={isSelected && isLoading}
+            togglePlay={togglePlay}
+            {...theme}
+          />
+        )
+      })}
+      <div hidden ref={containerRef} />
+    </>
   )
 }
 
-const Index = ({data}) => {
-  const [selected, setSelected] = React.useState()
-  return (
-    <PlayerContextGroup
-      createMediaElement={() => document.createElement('audio')}
-      defaultRepeatStrategy="none"
-    >
-      <Head>
-        <title>Своя игра</title>
-        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-      </Head>
-      <div className="container">
-        <Link href=".">
-          <a title="refresh" className="refresh">
-            <IoMdRefresh size={ICON_SIZE} />
-          </a>
-        </Link>
-        <div className="themes">
-          {data.map(theme => {
-            const isSelected = selected === theme.id
-            return (
-              <ThemeContainer
-                key={theme.id}
-                isSelected={isSelected}
-                setSelected={setSelected}
-                {...theme}
-              />
-            )
-          })}
-        </div>
+const Index = props => (
+  <>
+    <Head>
+      <title>Своя игра</title>
+      <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+    </Head>
+    <div className="container">
+      <Link href=".">
+        <a title="refresh" className="refresh">
+          <IoMdRefresh size={ICON_SIZE} />
+        </a>
+      </Link>
+      <div className="themes">
+        <Themes {...props} />
       </div>
-      <style jsx>{`
+    </div>
+    <style jsx>{`
+      .container {
+        display: flex;
+        flex-direction: row-reverse;
+        padding: 12px;
+      }
+      @media (max-width: 640px) {
         .container {
-          display: flex;
-          flex-direction: row-reverse;
-          padding: 12px;
+          flex-direction: column;
         }
-        @media (max-width: 640px) {
-          .container {
-            flex-direction: column;
-          }
-        }
-        .themes {
-          flex-grow: 1;
-          display: grid;
-          align-items: baseline;
-          grid-gap: 16px 8px;
-          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-          grid-template-rows: auto;
-          padding: 4px;
-        }
-        .refresh {
-          color: inherit;
-          text-align: center;
-          border-radius: 3px;
-          transition: background-color 0.3s ease-out;
-          margin: 4px;
-        }
-        .refresh > :global(svg) {
-          position: sticky;
-          top: 0;
-          opacity: 0.1;
-          transition: opacity 0.3s ease-out;
-        }
-        .refresh:hover,
-        .refresh:focus {
-          background-color: #f2f9ff;
-        }
-        .refresh:hover > :global(svg),
-        .refresh:focus > :global(svg) {
-          opacity: 0.3;
-          transition: none;
-        }
-        .refresh:focus {
-          outline: none;
-          box-shadow: 0 0 0 2px #80c6ff;
-        }
-        .refresh:active {
-          background-color: #d4edff;
-        }
-        .refresh:active > :global(svg) {
-          opacity: 0.5;
-        }
-      `}</style>
-    </PlayerContextGroup>
-  )
-}
+      }
+      .themes {
+        flex-grow: 1;
+        display: grid;
+        align-items: baseline;
+        grid-gap: 16px 8px;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        grid-template-rows: auto;
+        padding: 4px;
+      }
+      .refresh {
+        color: inherit;
+        text-align: center;
+        border-radius: 3px;
+        transition: background-color 0.3s ease-out;
+        margin: 4px;
+      }
+      .refresh > :global(svg) {
+        position: sticky;
+        top: 0;
+        opacity: 0.1;
+        transition: opacity 0.3s ease-out;
+      }
+      .refresh:hover,
+      .refresh:focus {
+        background-color: #f2f9ff;
+      }
+      .refresh:hover > :global(svg),
+      .refresh:focus > :global(svg) {
+        opacity: 0.3;
+        transition: none;
+      }
+      .refresh:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px #80c6ff;
+      }
+      .refresh:active {
+        background-color: #d4edff;
+      }
+      .refresh:active > :global(svg) {
+        opacity: 0.5;
+      }
+    `}</style>
+  </>
+)
 
 Index.getInitialProps = async ({req}) => {
   const origin = req

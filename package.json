@@ -6,17 +6,17 @@
   "license": "MIT",
   "private": true,
   "scripts": {
+    "postinstall": "cp -r node_modules/ogv/dist/ static",
     "dev": "node local.js",
     "build": "next build",
     "start": "next start -p 8000",
     "now-build": "yarn build"
   },
   "dependencies": {
-    "@cassette/core": "^2.0.0-alpha.30",
-    "@cassette/hooks": "^2.0.0-alpha.30",
     "axios": "^0.18.0",
     "classnames": "^2.2.6",
     "next": "^8.0.3",
+    "ogv": "^1.6.0",
     "react": "^16.8.3",
     "react-dom": "^16.8.3",
     "react-icons": "^3.4.0",

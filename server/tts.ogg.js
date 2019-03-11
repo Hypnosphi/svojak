@@ -23,7 +23,7 @@ module.exports = async (req, res) => {
       },
     )
 
-    res.setHeader('Content-Type', headers['content-type'])
+    res.setHeader('Content-Type', 'audio/ogg')
     if (process.env.NODE_ENV === 'production') {
       res.setHeader(
         'Cache-Control',
