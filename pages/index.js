@@ -1,10 +1,11 @@
 import axios from 'axios'
-import {IoMdPause, IoMdPlay, IoMdRefresh} from 'react-icons/io'
+import {IoMdPause, IoMdPlay, IoMdRefresh, IoMdMic} from 'react-icons/io'
 import classNames from 'classnames'
 import Head from 'next/head'
 import Link from 'next/link'
 
 import {OGGPlayer, useOGGPlayerContext} from '../components/OGGPlayer'
+import {useAudioAPI, useVolume} from '../hooks/useVolume'
 
 const ICON_SIZE = 80
 const ANIMATION_PHASES = 12
@@ -27,6 +28,9 @@ const getPlayList = ({questions, title}) =>
     )
     .map(text => `/tts.ogg?text=${encodeURIComponent(text)}`)
 
+const DispatchContext = React.createContext()
+const useDispatch = () => React.useContext(DispatchContext)
+
 const Theme = ({
   id,
   questions,
@@ -36,8 +40,8 @@ const Theme = ({
   author,
   isSelected,
   isPlaying,
-  dispatch,
 }) => {
+  const dispatch = useDispatch()
   const {isLoading, init} = useOGGPlayerContext()
 
   const handleClick = () => {
@@ -163,44 +167,9 @@ const Theme = ({
   )
 }
 
-const Themes = ({data}) => {
-  const [{selected, isPlaying, trackIndex}, dispatch] = React.useReducer(
-    (state, action) => {
-      switch (action.type) {
-        case 'TOGGLE':
-          return {
-            ...state,
-            selected: action.id != null ? action.id : state.selected,
-            isPlaying: action.isPlaying,
-            trackIndex:
-              action.id != null && action.id !== state.selected
-                ? 0
-                : state.trackIndex,
-          }
-        case 'NEXT_TRACK': {
-          const nextIndex = state.trackIndex + 1
-          if (nextIndex >= action.playlistLength) {
-            return {
-              ...state,
-              trackIndex: 0,
-              isPlaying: false,
-            }
-          }
-          return {
-            ...state,
-            trackIndex: nextIndex,
-          }
-        }
-        default:
-          return state
-      }
-    },
-    {
-      selected: null,
-      isPlaying: false,
-      trackIndex: 0,
-    },
-  )
+const Themes = ({data, state}) => {
+  const {selected, isPlaying, trackIndex} = state
+  const dispatch = useDispatch()
 
   const playlist = React.useMemo(() => {
     const selectedTheme = selected && data.find(theme => theme.id === selected)
@@ -209,7 +178,7 @@ const Themes = ({data}) => {
 
   const handleEnd = React.useCallback(() => {
     dispatch({type: 'NEXT_TRACK', playlistLength: playlist.length})
-  }, [playlist])
+  }, [dispatch, playlist])
 
   return (
     <OGGPlayer
@@ -224,7 +193,6 @@ const Themes = ({data}) => {
             key={theme.id}
             isSelected={isSelected}
             isPlaying={isSelected && isPlaying}
-            dispatch={dispatch}
             {...theme}
           />
         )
@@ -233,77 +201,237 @@ const Themes = ({data}) => {
   )
 }
 
-const Index = props => (
-  <>
-    <Head>
-      <title>Своя игра</title>
-      <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-    </Head>
+const MAX_VOLUME = 255
+const VolumeBar = React.memo(({volume}) => {
+  const dispatch = useDispatch()
+  const [threshold, setThreshold] = React.useState(64)
+  const thresholdReached = volume >= threshold
+
+  React.useEffect(() => {
+    if (thresholdReached) {
+      dispatch({type: 'TOGGLE', isPlaying: false})
+    }
+  }, [dispatch, thresholdReached])
+
+  return (
     <div className="container">
-      <Link href=".">
-        <a title="refresh" className="refresh">
-          <IoMdRefresh size={ICON_SIZE} />
-        </a>
-      </Link>
-      <div className="themes">
-        <Themes {...props} />
-      </div>
-    </div>
-    <style jsx>{`
-      .container {
-        display: flex;
-        flex-direction: row-reverse;
-        padding: 12px;
-      }
-      @media (max-width: 640px) {
+      <input
+        className={thresholdReached ? 'thresholdReached' : ''}
+        type="range"
+        max={MAX_VOLUME}
+        value={threshold}
+        onChange={e => setThreshold(e.target.value)}
+      />
+      <progress max={MAX_VOLUME} value={volume} />
+      <style jsx>{`
         .container {
-          flex-direction: column;
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          left: 0;
+        }
+        progress {
+          width: 100%;
+        }
+        input {
+          -webkit-appearance: none;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          background: transparent;
+          border-radius: 3px;
+        }
+        input::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background-color: #fff;
+          box-shadow: 0 0 0 1px #b8d1e5;
+        }
+        input:hover::-webkit-slider-thumb {
+          box-shadow: 0 0 0 1px #80c6ff;
+        }
+        input:focus::-webkit-slider-thumb {
+          box-shadow: 0 0 0 2px #80c6ff;
+        }
+        input:active::-webkit-slider-thumb,
+        .thresholdReached::-webkit-slider-thumb {
+          background-color: #d4edff;
+          box-shadow: 0 0 0 1px #80c6ff;
+        }
+        input:focus {
+          outline: none;
+        }
+      `}</style>
+    </div>
+  )
+})
+
+const Volume = () => {
+  const volume = useVolume()
+  return <VolumeBar volume={volume} />
+}
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'TOGGLE':
+      return {
+        ...state,
+        selected: action.id != null ? action.id : state.selected,
+        isPlaying: action.isPlaying,
+        trackIndex:
+          action.id != null && action.id !== state.selected
+            ? 0
+            : state.trackIndex,
+      }
+    case 'NEXT_TRACK': {
+      const nextIndex = state.trackIndex + 1
+      if (nextIndex >= action.playlistLength) {
+        return {
+          ...state,
+          trackIndex: 0,
+          isPlaying: false,
         }
       }
-      .themes {
-        flex-grow: 1;
-        display: grid;
-        align-items: baseline;
-        grid-gap: 16px 8px;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        grid-template-rows: auto;
-        padding: 4px;
+      return {
+        ...state,
+        trackIndex: nextIndex,
       }
-      .refresh {
-        color: inherit;
-        text-align: center;
-        border-radius: 3px;
-        transition: background-color 0.3s ease-out;
-        margin: 4px;
-      }
-      .refresh > :global(svg) {
-        position: sticky;
-        top: 0;
-        opacity: 0.1;
-        transition: opacity 0.3s ease-out;
-      }
-      .refresh:hover,
-      .refresh:focus {
-        background-color: #f2f9ff;
-      }
-      .refresh:hover > :global(svg),
-      .refresh:focus > :global(svg) {
-        opacity: 0.3;
-        transition: none;
-      }
-      .refresh:focus {
-        outline: none;
-        box-shadow: 0 0 0 2px #80c6ff;
-      }
-      .refresh:active {
-        background-color: #d4edff;
-      }
-      .refresh:active > :global(svg) {
-        opacity: 0.5;
-      }
-    `}</style>
-  </>
-)
+    }
+    default:
+      return state
+  }
+}
+
+const initialState = {
+  selected: null,
+  isPlaying: false,
+  trackIndex: 0,
+}
+
+const Index = props => {
+  const [state, dispatch] = React.useReducer(reducer, initialState)
+  const [useMic, setUseMic] = React.useState()
+  const {supported} = useAudioAPI()
+
+  return (
+    <DispatchContext.Provider value={dispatch}>
+      <Head>
+        <title>Своя игра</title>
+        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+        <meta
+          httpEquiv="origin-trial"
+          content={process.env.GOOGLE_TRIAL_TOKEN}
+        />
+      </Head>
+      <div className="container">
+        <div className="controls">
+          {supported && (
+            <div className="use-mic-container">
+              <button
+                className={classNames('control', 'use-mic', {
+                  'use-mic-on': useMic,
+                })}
+                title="Use microphone"
+                type="button"
+                onClick={() => setUseMic(use => !use)}
+              >
+                <IoMdMic size={ICON_SIZE} />
+              </button>
+              {useMic && <Volume />}
+            </div>
+          )}
+          <Link href=".">
+            <a title="refresh" className="control refresh">
+              <IoMdRefresh size={ICON_SIZE} />
+            </a>
+          </Link>
+        </div>
+        <div className="themes">
+          <Themes state={state} {...props} />
+        </div>
+      </div>
+      <style jsx>{`
+        .container {
+          display: flex;
+          flex-direction: row-reverse;
+          padding: 12px;
+        }
+        .controls {
+          display: flex;
+          flex-direction: column;
+        }
+        @media (max-width: 640px) {
+          .container {
+            flex-direction: column;
+          }
+          .controls {
+            flex-direction: row;
+          }
+        }
+
+        .themes {
+          flex-grow: 1;
+          display: grid;
+          align-items: baseline;
+          grid-gap: 16px 8px;
+          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+          grid-template-rows: auto;
+          padding: 4px;
+        }
+        .control {
+          -webkit-appearance: none;
+          background: none;
+          border: none;
+          color: inherit;
+          text-align: center;
+          border-radius: 3px;
+          transition: background-color 0.3s ease-out;
+          margin: 4px;
+          cursor: pointer;
+        }
+        .control > :global(svg) {
+          opacity: 0.1;
+          transition: opacity 0.3s ease-out;
+        }
+        .control:hover,
+        .control:focus {
+          background-color: #f2f9ff;
+        }
+        .control:hover > :global(svg),
+        .control:focus > :global(svg) {
+          opacity: 0.3;
+          transition: none;
+        }
+        .control:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px #80c6ff;
+        }
+        .control:active,
+        .control.use-mic-on {
+          background-color: #d4edff;
+        }
+        .control:active > :global(svg),
+        .control.use-mic-on > :global(svg) {
+          opacity: 0.5;
+        }
+        .refresh {
+          flex-grow: 1;
+        }
+        .refresh > :global(svg) {
+          position: sticky;
+          top: 0;
+        }
+        .use-mic-container {
+          position: relative;
+          padding-bottom: 24px;
+        }
+      `}</style>
+    </DispatchContext.Provider>
+  )
+}
 
 Index.getInitialProps = async ({req}) => {
   const origin = req

@@ -23,6 +23,7 @@
     "react-dom": "^16.8.3",
     "react-icons": "^3.4.0",
     "vk-io": "^4.0.0-rc.15",
+    "webpack": "^4.29.6",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {

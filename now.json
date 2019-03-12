@@ -5,7 +5,8 @@
     "YANDEX_TOKEN": "@yandex-token",
     "FOLDER_ID": "@folder-id",
     "VK_TOKEN": "@vk-token",
-    "GROUP_ID": "-45491419"
+    "GROUP_ID": "-45491419",
+    "GOOGLE_TRIAL_TOKEN": "@google-trial-token"
   },
   "builds": [
     {"src": "next.config.js", "use": "@now/next"},
