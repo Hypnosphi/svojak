@@ -20,8 +20,8 @@ const getPlayList = ({questions, title}) =>
       ...questions.map(({question, answer, comment}, i) =>
         [
           `${title} за ${(i + 1) * 10}. ${question}`,
-          `-Ответ: ${answer}`,
-          comment & `Комментарий: ${comment}`,
+          `Раз, -два, -три. -Ответ: ${answer}`,
+          comment && `Комментарий. ${comment}`,
         ].filter(Boolean),
       ),
     )
