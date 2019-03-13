@@ -349,31 +349,49 @@ const Index = props => {
             </a>
           </Link>
         </div>
-        <div className="themes">
-          <Themes state={state} {...props} />
+        <div className="themesContainer">
+          <div className="themes">
+            <Themes state={state} {...props} />
+          </div>
         </div>
       </div>
       <style jsx>{`
+        :global(body) {
+          margin: 0;
+        }
         .container {
-          display: flex;
-          flex-direction: row-reverse;
-          padding: 12px;
+          padding: 20px 116px 20px 12px;
         }
         .controls {
+          position: fixed;
+          top: 20px;
+          right: 12px;
+          bottom: 20px;
           display: flex;
           flex-direction: column;
         }
+
         @media (max-width: 640px) {
           .container {
+            padding-right: 12px;
+            display: flex;
             flex-direction: column;
+            box-sizing: border-box;
+            height: 100vh;
           }
           .controls {
+            position: static;
+            flex-shrink: 0;
             flex-direction: row;
+            align-items: flex-start;
+          }
+          .themesContainer {
+            flex-grow: 1;
+            overflow: auto;
           }
         }
 
         .themes {
-          flex-grow: 1;
           display: grid;
           align-items: baseline;
           grid-gap: 16px 8px;
@@ -419,10 +437,6 @@ const Index = props => {
         }
         .refresh {
           flex-grow: 1;
-        }
-        .refresh > :global(svg) {
-          position: sticky;
-          top: 0;
         }
         .use-mic-container {
           position: relative;
