@@ -34,6 +34,11 @@ module.exports = async (req, res, getText) => {
     }
     data.pipe(res)
   } catch (e) {
+    if (e.response) {
+      console.log(error.response.data)
+      console.log(error.response.status)
+      console.log(error.response.headers)
+    }
     console.error(e)
     res.statusCode = 500
     res.end()
