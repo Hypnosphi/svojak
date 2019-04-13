@@ -5,13 +5,13 @@ const QUESTIONS_COUNT = 5
 const THEMES_COUNT = 60
 
 const themeRE = new RegExp(
-  `^([\\s\\S]*?)?${Array(QUESTIONS_COUNT)
+  `^([\\s\\S]*?)?${Array(QUESTIONS_COUNT + 1)
     .fill()
     .map((_, i) => `(?:\\s+(${i + 1})0?\\.\\s([\\s\\S]*?))?`)
     .join('')}$`,
 )
 
-const numberRE = /^[1-5]$/
+const numberRE = new RegExp(`^[1-${QUESTIONS_COUNT}]$`)
 
 const parseTheme = raw => {
   if (!raw || !themeRE.test(raw)) {
@@ -61,6 +61,10 @@ const processTheme = ({
       break
     }
     questions.push({question, answer, comment})
+  }
+
+  if (parsedQuestions[QUESTIONS_COUNT + 1] != null) {
+    console.log(Question._text, parsedQuestions, Answer._text, answers)
   }
 
   return {
