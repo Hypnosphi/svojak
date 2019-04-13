@@ -40,6 +40,7 @@ const Theme = ({
   author,
   isSelected,
   isPlaying,
+  isFinished,
 }) => {
   const dispatch = useDispatch()
   const {isLoading, init} = useOGGPlayerContext()
@@ -57,6 +58,7 @@ const Theme = ({
           selected: isSelected,
           loading: isSelected && isLoading,
           playing: isPlaying,
+          finished: isFinished,
         })}
         onClick={handleClick}
       >
@@ -137,6 +139,10 @@ const Theme = ({
           background-size: 128px;
           background-repeat: repeat;
         }
+        .finished {
+          transition: opacity 0.3s ease-out;
+          opacity: 0.5;
+        }
         h2 {
           font-size: 20px;
           line-height: 24px;
@@ -168,7 +174,7 @@ const Theme = ({
 }
 
 const Themes = ({data, state}) => {
-  const {selected, isPlaying, trackIndex} = state
+  const {selected, isPlaying, trackIndex, finished} = state
   const dispatch = useDispatch()
 
   const playlist = React.useMemo(() => {
@@ -193,6 +199,7 @@ const Themes = ({data, state}) => {
             key={theme.id}
             isSelected={isSelected}
             isPlaying={isSelected && isPlaying}
+            isFinished={finished[theme.id]}
             {...theme}
           />
         )
@@ -293,6 +300,10 @@ const reducer = (state, action) => {
           ...state,
           trackIndex: 0,
           isPlaying: false,
+          finished: {
+            ...state.finished,
+            [state.selected]: true,
+          },
         }
       }
       return {
@@ -309,6 +320,7 @@ const initialState = {
   selected: null,
   isPlaying: false,
   trackIndex: 0,
+  finished: {},
 }
 
 const Index = props => {
